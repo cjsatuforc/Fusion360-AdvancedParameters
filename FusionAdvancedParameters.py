@@ -5,10 +5,6 @@ from datetime import datetime
 from queue import Queue
 import ctypes
 
-# global set of event handlers to keep them referenced for the duration of the command
-# handlers = []
-# customHandlers = []
-# htmlHandler = []
 _eventList = {}
 _app = adsk.core.Application.cast(None)
 _ui = adsk.core.UserInterface.cast(None)
