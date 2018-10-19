@@ -1,0 +1,13 @@
+{
+	"autodeskProduct":	"Fusion360",
+	"type":	"addin",
+	"id":	"61d6a38b-4345-48bd-98ec-76fee9edfa9a",
+	"author":	"Joseph Wise",
+	"description":	{
+		"":	"Provides advanced functionality for managing parameters in Fusion 360."
+	},
+	"version":	"0.1",
+	"runOnStartup":	false,
+	"supportedOS":	"windows|mac",
+	"editEnabled":	true
+}
