@@ -1,9 +1,17 @@
-import adsk.core, adsk.fusion, adsk.cam # pylint: disable=import-error
+# TODO: Need to handle errors while getting/setting parameters
+import adsk.core
+import adsk.fusion
+import adsk.cam
 import traceback
-import threading, time, json
-from datetime import datetime
+import threading
+import time
+import json
+# from datetime import datetime
 from queue import Queue
 import ctypes
+
+from .modules.Parameters import get_parameters_data, set_parameters
+from .modules.FusionAdvancedParametersUtilities import show_message
 
 _eventList = {}
 _app = adsk.core.Application.cast(None)
@@ -20,434 +28,39 @@ ADVANCEDPARAMETERSPALETTE = 'advancedParametersPalette'
 SHOWAPCOMMAND = 'ShowApPalette'
 HTMLFILE = 'ui/FusionAdvancedParameters.html'
 
+
 class ProcessApCommandEventHandler(adsk.core.CustomEventHandler):
     def __init__(self):
         super().__init__()
+
     def notify(self, eventArgs):
         try:
             args = adsk.core.CustomEventArgs.cast(eventArgs)
             command = json.loads(args.additionalInfo)
-            # global ADVANCEDPARAMETERSPALETTE
-            # action = command.action
-            # data = json.loads(command.data)
-            # data['requestId'] = action['requestId']
-
-            jsonData = {
-                "total": 45,
-                "status": "success",
-                "records": [
-                    {
-                        "ID": 1538197593990,
-                        "Group": "Group 1",
-                        "Name": "Name 1",
-                        "Unit": "Unit 1",
-                        "Expression": "Expression 1 is extra long, let's make it even longer so it wraps to account for those crazy expressions I write sometimes",
-                        "Value": "Value 1",
-                        "Comments": "Comment 1"
-                    },
-                    {
-                        "ID": 1538197593991,
-                        "Group": "Group 2",
-                        "Name": "Name 2",
-                        "Unit": "Unit 2",
-                        "Expression": "Expression 2",
-                        "Value": "Value 2",
-                        "Comments": "Comment 2"
-                    },
-                    {
-                        "ID": 1538197593992,
-                        "Group": "Group 3",
-                        "Name": "Name 3",
-                        "Unit": "Unit 3",
-                        "Expression": "Expression 3",
-                        "Value": "Value 3",
-                        "Comments": "Comment 3"
-                    },
-                    {
-                        "ID": 1538197593993,
-                        "Group": "Group 4",
-                        "Name": "Name 4",
-                        "Unit": "Unit 4",
-                        "Expression": "Expression 4",
-                        "Value": "Value 4",
-                        "Comments": "Comment 4"
-                    },
-                    {
-                        "ID": 1538197593994,
-                        "Group": "Group 5",
-                        "Name": "Name 5",
-                        "Unit": "Unit 5",
-                        "Expression": "Expression 5",
-                        "Value": "Value 5",
-                        "Comments": "Comment 5"
-                    },
-                    {
-                        "ID": 1538197593995,
-                        "Group": "Group 6",
-                        "Name": "Name 6",
-                        "Unit": "Unit 6",
-                        "Expression": "Expression 6",
-                        "Value": "Value 6",
-                        "Comments": "Comment 6"
-                    },
-                    {
-                        "ID": 1538197593996,
-                        "Group": "Group 7",
-                        "Name": "Name 7",
-                        "Unit": "Unit 7",
-                        "Expression": "Expression 7",
-                        "Value": "Value 7",
-                        "Comments": "Comment 7"
-                    },
-                    {
-                        "ID": 1538197593997,
-                        "Group": "Group 8",
-                        "Name": "Name 8",
-                        "Unit": "Unit 8",
-                        "Expression": "Expression 8",
-                        "Value": "Value 8",
-                        "Comments": "Comment 8"
-                    },
-                    {
-                        "ID": 1538197593998,
-                        "Group": "Group 9",
-                        "Name": "Name 9",
-                        "Unit": "Unit 9",
-                        "Expression": "Expression 9",
-                        "Value": "Value 9",
-                        "Comments": "Comment 9"
-                    },
-                    {
-                        "ID": 1538197593999,
-                        "Group": "Group 10",
-                        "Name": "Name 10",
-                        "Unit": "Unit 10",
-                        "Expression": "Expression 10",
-                        "Value": "Value 10",
-                        "Comments": "Comment 10"
-                    },
-                    {
-                        "ID": 1538197594000,
-                        "Group": "Group 11",
-                        "Name": "Name 11",
-                        "Unit": "Unit 11",
-                        "Expression": "Expression 11",
-                        "Value": "Value 11",
-                        "Comments": "Comment 11"
-                    },
-                    {
-                        "ID": 1538197594001,
-                        "Group": "Group 12",
-                        "Name": "Name 12",
-                        "Unit": "Unit 12",
-                        "Expression": "Expression 12",
-                        "Value": "Value 12",
-                        "Comments": "Comment 12"
-                    },
-                    {
-                        "ID": 1538197594002,
-                        "Group": "Group 13",
-                        "Name": "Name 13",
-                        "Unit": "Unit 13",
-                        "Expression": "Expression 13",
-                        "Value": "Value 13",
-                        "Comments": "Comment 13"
-                    },
-                    {
-                        "ID": 1538197594003,
-                        "Group": "Group 14",
-                        "Name": "Name 14",
-                        "Unit": "Unit 14",
-                        "Expression": "Expression 14",
-                        "Value": "Value 14",
-                        "Comments": "Comment 14"
-                    },
-                    {
-                        "ID": 1538197594004,
-                        "Group": "Group 15",
-                        "Name": "Name 15",
-                        "Unit": "Unit 15",
-                        "Expression": "Expression 15",
-                        "Value": "Value 15",
-                        "Comments": "Comment 15"
-                    },
-                    {
-                        "ID": 1538197593990,
-                        "Group": "Group 1",
-                        "Name": "Name 1",
-                        "Unit": "Unit 1",
-                        "Expression": "Expression 1 is extra long",
-                        "Value": "Value 1",
-                        "Comments": "Comment 1"
-                    },
-                    {
-                        "ID": 1538197593991,
-                        "Group": "Group 2",
-                        "Name": "Name 2",
-                        "Unit": "Unit 2",
-                        "Expression": "Expression 2",
-                        "Value": "Value 2",
-                        "Comments": "Comment 2"
-                    },
-                    {
-                        "ID": 1538197593992,
-                        "Group": "Group 3",
-                        "Name": "Name 3",
-                        "Unit": "Unit 3",
-                        "Expression": "Expression 3",
-                        "Value": "Value 3",
-                        "Comments": "Comment 3"
-                    },
-                    {
-                        "ID": 1538197593993,
-                        "Group": "Group 4",
-                        "Name": "Name 4",
-                        "Unit": "Unit 4",
-                        "Expression": "Expression 4",
-                        "Value": "Value 4",
-                        "Comments": "Comment 4"
-                    },
-                    {
-                        "ID": 1538197593994,
-                        "Group": "Group 5",
-                        "Name": "Name 5",
-                        "Unit": "Unit 5",
-                        "Expression": "Expression 5",
-                        "Value": "Value 5",
-                        "Comments": "Comment 5"
-                    },
-                    {
-                        "ID": 1538197593995,
-                        "Group": "Group 6",
-                        "Name": "Name 6",
-                        "Unit": "Unit 6",
-                        "Expression": "Expression 6",
-                        "Value": "Value 6",
-                        "Comments": "Comment 6"
-                    },
-                    {
-                        "ID": 1538197593996,
-                        "Group": "Group 7",
-                        "Name": "Name 7",
-                        "Unit": "Unit 7",
-                        "Expression": "Expression 7",
-                        "Value": "Value 7",
-                        "Comments": "Comment 7"
-                    },
-                    {
-                        "ID": 1538197593997,
-                        "Group": "Group 8",
-                        "Name": "Name 8",
-                        "Unit": "Unit 8",
-                        "Expression": "Expression 8",
-                        "Value": "Value 8",
-                        "Comments": "Comment 8"
-                    },
-                    {
-                        "ID": 1538197593998,
-                        "Group": "Group 9",
-                        "Name": "Name 9",
-                        "Unit": "Unit 9",
-                        "Expression": "Expression 9",
-                        "Value": "Value 9",
-                        "Comments": "Comment 9"
-                    },
-                    {
-                        "ID": 1538197593999,
-                        "Group": "Group 10",
-                        "Name": "Name 10",
-                        "Unit": "Unit 10",
-                        "Expression": "Expression 10",
-                        "Value": "Value 10",
-                        "Comments": "Comment 10"
-                    },
-                    {
-                        "ID": 1538197594000,
-                        "Group": "Group 11",
-                        "Name": "Name 11",
-                        "Unit": "Unit 11",
-                        "Expression": "Expression 11",
-                        "Value": "Value 11",
-                        "Comments": "Comment 11"
-                    },
-                    {
-                        "ID": 1538197594001,
-                        "Group": "Group 12",
-                        "Name": "Name 12",
-                        "Unit": "Unit 12",
-                        "Expression": "Expression 12",
-                        "Value": "Value 12",
-                        "Comments": "Comment 12"
-                    },
-                    {
-                        "ID": 1538197594002,
-                        "Group": "Group 13",
-                        "Name": "Name 13",
-                        "Unit": "Unit 13",
-                        "Expression": "Expression 13",
-                        "Value": "Value 13",
-                        "Comments": "Comment 13"
-                    },
-                    {
-                        "ID": 1538197594003,
-                        "Group": "Group 14",
-                        "Name": "Name 14",
-                        "Unit": "Unit 14",
-                        "Expression": "Expression 14",
-                        "Value": "Value 14",
-                        "Comments": "Comment 14"
-                    },
-                    {
-                        "ID": 1538197594004,
-                        "Group": "Group 15",
-                        "Name": "Name 15",
-                        "Unit": "Unit 15",
-                        "Expression": "Expression 15",
-                        "Value": "Value 15",
-                        "Comments": "Comment 15"
-                    },
-                    {
-                        "ID": 1538197593990,
-                        "Group": "Group 1",
-                        "Name": "Name 1",
-                        "Unit": "Unit 1",
-                        "Expression": "Expression 1 is extra long",
-                        "Value": "Value 1",
-                        "Comments": "Comment 1"
-                    },
-                    {
-                        "ID": 1538197593991,
-                        "Group": "Group 2",
-                        "Name": "Name 2",
-                        "Unit": "Unit 2",
-                        "Expression": "Expression 2",
-                        "Value": "Value 2",
-                        "Comments": "Comment 2"
-                    },
-                    {
-                        "ID": 1538197593992,
-                        "Group": "Group 3",
-                        "Name": "Name 3",
-                        "Unit": "Unit 3",
-                        "Expression": "Expression 3",
-                        "Value": "Value 3",
-                        "Comments": "Comment 3"
-                    },
-                    {
-                        "ID": 1538197593993,
-                        "Group": "Group 4",
-                        "Name": "Name 4",
-                        "Unit": "Unit 4",
-                        "Expression": "Expression 4",
-                        "Value": "Value 4",
-                        "Comments": "Comment 4"
-                    },
-                    {
-                        "ID": 1538197593994,
-                        "Group": "Group 5",
-                        "Name": "Name 5",
-                        "Unit": "Unit 5",
-                        "Expression": "Expression 5",
-                        "Value": "Value 5",
-                        "Comments": "Comment 5"
-                    },
-                    {
-                        "ID": 1538197593995,
-                        "Group": "Group 6",
-                        "Name": "Name 6",
-                        "Unit": "Unit 6",
-                        "Expression": "Expression 6",
-                        "Value": "Value 6",
-                        "Comments": "Comment 6"
-                    },
-                    {
-                        "ID": 1538197593996,
-                        "Group": "Group 7",
-                        "Name": "Name 7",
-                        "Unit": "Unit 7",
-                        "Expression": "Expression 7",
-                        "Value": "Value 7",
-                        "Comments": "Comment 7"
-                    },
-                    {
-                        "ID": 1538197593997,
-                        "Group": "Group 8",
-                        "Name": "Name 8",
-                        "Unit": "Unit 8",
-                        "Expression": "Expression 8",
-                        "Value": "Value 8",
-                        "Comments": "Comment 8"
-                    },
-                    {
-                        "ID": 1538197593998,
-                        "Group": "Group 9",
-                        "Name": "Name 9",
-                        "Unit": "Unit 9",
-                        "Expression": "Expression 9",
-                        "Value": "Value 9",
-                        "Comments": "Comment 9"
-                    },
-                    {
-                        "ID": 1538197593999,
-                        "Group": "Group 10",
-                        "Name": "Name 10",
-                        "Unit": "Unit 10",
-                        "Expression": "Expression 10",
-                        "Value": "Value 10",
-                        "Comments": "Comment 10"
-                    },
-                    {
-                        "ID": 1538197594000,
-                        "Group": "Group 11",
-                        "Name": "Name 11",
-                        "Unit": "Unit 11",
-                        "Expression": "Expression 11",
-                        "Value": "Value 11",
-                        "Comments": "Comment 11"
-                    },
-                    {
-                        "ID": 1538197594001,
-                        "Group": "Group 12",
-                        "Name": "Name 12",
-                        "Unit": "Unit 12",
-                        "Expression": "Expression 12",
-                        "Value": "Value 12",
-                        "Comments": "Comment 12"
-                    },
-                    {
-                        "ID": 1538197594002,
-                        "Group": "Group 13",
-                        "Name": "Name 13",
-                        "Unit": "Unit 13",
-                        "Expression": "Expression 13",
-                        "Value": "Value 13",
-                        "Comments": "Comment 13"
-                    },
-                    {
-                        "ID": 1538197594003,
-                        "Group": "Group 14",
-                        "Name": "Name 14",
-                        "Unit": "Unit 14",
-                        "Expression": "Expression 14",
-                        "Value": "Value 14",
-                        "Comments": "Comment 14"
-                    },
-                    {
-                        "ID": 1538197594004,
-                        "Group": "Group 15",
-                        "Name": "Name 15",
-                        "Unit": "Unit 15",
-                        "Expression": "Expression 15",
-                        "Value": "Value 15",
-                        "Comments": "Comment 15"
-                    }
-                ]
+            action = command['action']
+            commands = {
+                'parameters': {
+                    'get': get_parameters_data,
+                    'set': set_parameters
+                }
             }
 
-            _advancedParametersPalette.sendInfoToHTML(json.dumps(command['action']), json.dumps(jsonData))
+            func = commands[action['item']][action['command']]
+
+            arguments = action['arguments'] if 'arguments' \
+                in action else []
+
+            returnValues = func(arguments)
+            returnDict = {
+                'total': len(returnValues),
+                'status': 'success',
+                'records': returnValues
+            }
+
+            _advancedParametersPalette.sendInfoToHTML(json.dumps(action), json.dumps(returnDict))
         except:
-            if _ui:
-                _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+            show_message('Failed to process the command:\n{}{}', (traceback.format_exc(), ''))
+
 
 # worker thread
 class PassHTMLCommandThread(threading.Thread):
@@ -456,10 +69,11 @@ class PassHTMLCommandThread(threading.Thread):
         self.isStopped = False
         self.isPaused = False
         self.queue = queue
+
     def run(self):
+        queue = self.queue
         try:
             while not self.isStopped:
-                queue = self.queue
                 args = queue.get()
 
                 if (not args == 'paused'):
@@ -475,75 +89,81 @@ class PassHTMLCommandThread(threading.Thread):
 
         except:
             ctypes.windll.user32.MessageBoxW(0, 'Failed:\n{}'.format(traceback.format_exc()), "Failed", 1)
+
     def stop(self):
         self.isStopped = True
+
     def pause(self):
         self.isPaused = True
         self.queue.put('paused')
+
     def resume(self):
         self.isPaused = False
 
-# Event handler that is called when the add-in is destroyed. The custom event is
-# unregistered here and the thread is stopped.
+
+# Event handler that is called when the add-in is destroyed.
+# The custom event is unregistered here and the thread is stopped.
 class MyDestroyHandler(adsk.core.CommandEventHandler):
     def __init__(self):
         super().__init__()
+
     def notify(self, args):
         pass
+
 
 # Event handler for the commandExecuted event.
 class ShowApCommandExecuteHandler(adsk.core.CommandEventHandler):
     def __init__(self):
         super().__init__()
+
     def notify(self, args):
         try:
             if (not _passApCommandThread):
-                initParameterManager()
+                initAdvancedParameters()
             else:
                 _passApCommandThread.resume()
                 _advancedParametersPalette.isVisible = True
+
         except:
-            _ui.messageBox('Failed to init Parameter Manager: {}'.format(traceback.format_exc()))
+            show_message('Failed to init Parameter Manager:\n{}', (traceback.format_exc()))
 
 
 # Event handler for the commandCreated event.
 class ShowApCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
     def __init__(self):
         super().__init__()
+
     def notify(self, args):
         try:
-            # eventArgs = adsk.core.CommandCreatedEventArgs.cast(args)
-            # inputs = eventArgs.command.commandInputs
-
             command = args.command
             onExecute = ShowApCommandExecuteHandler()
             command.execute.add(onExecute)
-            # handlers.append(onExecute)
 
             addEventReference(self.__class__.__name__, command, onExecute)
         except:
-            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+            show_message('Failed while trying to assign the execute handler:\n{}', (traceback.format_exc()))
+
 
 # Event handler for the palette close event.
 class ClosePaletteEventHandler(adsk.core.UserInterfaceGeneralEventHandler):
     def __init__(self):
         super().__init__()
+
     def notify(self, args):
         try:
             _passApCommandThread.pause()
-            # reset()
         except:
-            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+            show_message('Failed while executing the close palette handler:\n', (traceback.format_exc()))
 
 
 # Event handler for the palette HTML event.
 class ClientEventHandler(adsk.core.HTMLEventHandler):
     def __init__(self):
         super().__init__()
+
     def notify(self, args):
         try:
             htmlArgs = adsk.core.HTMLEventArgs.cast(args)
-            # data = json.dumps(htmlArgs.data)
 
             data = json.loads(htmlArgs.data)
             action = json.loads(htmlArgs.action)
@@ -558,9 +178,10 @@ class ClientEventHandler(adsk.core.HTMLEventHandler):
             if _passApCommandThread.isAlive():
                 _passApCommandThreadQueue.put(paramJSON)
         except:
-            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+            show_message('Failure while handling incoming event from the HTML palette:\n{}', (traceback.format_exc()))
 
-def initParameterManager():
+
+def initAdvancedParameters():
         global _eventList, _advancedParametersPalette, _passApCommandThread
 
         # Register the custom event and connect the handler.
@@ -575,9 +196,9 @@ def initParameterManager():
         _passApCommandThread = PassHTMLCommandThread(_passApCommandThreadQueue)
         _passApCommandThread.start()
 
-
         # Create and display the palette.
-        _advancedParametersPalette = _ui.palettes.add(ADVANCEDPARAMETERSPALETTE, 'Parameter Manager', HTMLFILE, True, True, True, 800, 600)
+        _advancedParametersPalette = _ui.palettes.add(ADVANCEDPARAMETERSPALETTE, 'Parameter Manager', HTMLFILE, True,
+                                                      True, True, 1024, 768)
 
         # Dock the palette to the right side of Fusion window.
         _advancedParametersPalette.dockingState = adsk.core.PaletteDockingStates.PaletteDockStateRight
@@ -585,20 +206,63 @@ def initParameterManager():
         # Add handler to HTMLEvent of the palette.
         onHTMLEvent = ClientEventHandler()
         _advancedParametersPalette.incomingFromHTML.add(onHTMLEvent)
-        addEventReference(ADVANCEDPARAMETERSPALETTE + 'Incoming', _advancedParametersPalette.incomingFromHTML, onHTMLEvent)
+        addEventReference(ADVANCEDPARAMETERSPALETTE + 'Incoming',
+                          _advancedParametersPalette.incomingFromHTML, onHTMLEvent)
 
         onClosed = ClosePaletteEventHandler()
         _advancedParametersPalette.closed.add(onClosed)
         addEventReference(ADVANCEDPARAMETERSPALETTE + 'Closed', _advancedParametersPalette.closed, onClosed)
 
         # Allow page to init
-        for i in range(30): # pylint: disable=unused-variable
-            print (i)
+        for i in range(30):
+            print(i)
             time.sleep(0.1)
             adsk.doEvents()
 
         # Tell the ui that Fusion is ready to accept commands
-        _advancedParametersPalette.sendInfoToHTML('{ "command": "init", "channel": "fusion", "topic": "init" }', json.dumps({}))
+        _advancedParametersPalette.sendInfoToHTML('{ "command": "init", "channel": "fusion", "topic": "init" }',
+                                                  json.dumps({}))
+
+
+def stopAdvancedParameters():
+    global _advancedParametersPalette
+
+    # Delete the palette created by this add-in.
+    if _advancedParametersPalette:
+        _advancedParametersPalette.deleteMe()
+        _advancedParametersPalette = None
+
+    # Delete controls and associated command definitions created by this add-ins
+    panel = _ui.allToolbarPanels.itemById('SolidScriptsAddinsPanel')
+    cntrl = panel.controls.itemById(SHOWAPCOMMAND)
+
+    if cntrl:
+        cntrl.deleteMe()
+
+    cmdDef = _ui.commandDefinitions.itemById(SHOWAPCOMMAND)
+
+    if cmdDef:
+        cmdDef.deleteMe()
+
+    try:
+        _passApCommandThread.stop()
+    except:
+        show_message("Couldn't stop the thread:\n{}", (traceback.format_exc()))
+        # _ui.messageBox("Couldn't stop the thread:\n{}".format(traceback.format_exc()))
+
+    for key, event in _eventList.items():
+        try:
+            if (hasattr(event['command'], 'remove')):
+                event['command'].remove(event['event'])
+        except:
+            show_message('Failed to remove event from command:\n{}', (traceback.format_exc()))
+
+        try:
+            _app.unregisterCustomEvent(event['name'])
+        except:
+            show_message('Failed to unregister custom event:\n{}', (traceback.format_exc()))
+
+    _eventList.clear()
 
 
 def addEventReference(name, command, event):
@@ -610,20 +274,20 @@ def addEventReference(name, command, event):
             'event': event
         }
     except:
-        if _ui:
-            _ui.messageBox('Could not add event reference:\n{}'.format(traceback.format_exc()))
+        show_message('Could not add event reference:\n{}', (traceback.format_exc()))
 
 
 def run(context):
     try:
         global _ui, _app
         _app = adsk.core.Application.get()
-        _ui  = _app.userInterface
+        _ui = _app.userInterface
 
         # Add a command that displays the panel.
         showPMCmdDef = _ui.commandDefinitions.itemById(SHOWAPCOMMAND)
         if not showPMCmdDef:
-            showPMCmdDef = _ui.commandDefinitions.addButtonDefinition(SHOWAPCOMMAND, 'Open Parameter Manager', 'Open Parameter Manager', '')
+            showPMCmdDef = _ui.commandDefinitions.addButtonDefinition(SHOWAPCOMMAND, 'Open Parameter Manager',
+                                                                      'Open Parameter Manager', '')
 
             # Connect to Command Created event.
             onCommandCreated = ShowApCommandCreatedHandler()
@@ -638,51 +302,12 @@ def run(context):
             panel.controls.addCommand(showPMCmdDef)
 
     except:
-        if _ui:
-            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+        show_message('Failed to run the addin:\n{}', (traceback.format_exc()))
 
 
 def stop(context):
     try:
+        stopAdvancedParameters()
 
-        global _advancedParametersPalette
-        # Delete the palette created by this add-in.
-        if _advancedParametersPalette:
-            _advancedParametersPalette.deleteMe()
-            _advancedParametersPalette = None
-
-        # Delete controls and associated command definitions created by this add-ins
-        panel = _ui.allToolbarPanels.itemById('SolidScriptsAddinsPanel')
-        cntrl = panel.controls.itemById(SHOWAPCOMMAND)
-        if cntrl:
-            cntrl.deleteMe()
-
-        cmdDef = _ui.commandDefinitions.itemById(SHOWAPCOMMAND)
-        if cmdDef:
-            cmdDef.deleteMe()
-
-        try:
-            _passApCommandThread.stop()
-        except:
-            if _ui:
-                _ui.messageBox("Couldn't stop the thread:\n{}".format(traceback.format_exc()))
-
-        for key, event in _eventList.items():
-            try:
-                if (hasattr(event['command'], 'remove')):
-                    event['command'].remove(event['event'])
-            except:
-                if _ui:
-                    _ui.messageBox('Failed to remove event from command:\n{}'.format(traceback.format_exc()))
-            try:
-                _app.unregisterCustomEvent(event['name'])
-            except:
-                if _ui:
-                    _ui.messageBox('Failed to unregister custom event:\n{}'.format(traceback.format_exc()))
-
-        _eventList.clear()
-
-        # _ui.messageBox('Stop addin')
     except:
-        if _ui:
-            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+        show_message('Failed to fully stop the addin:\n{}', (traceback.format_exc()))

@@ -1,20 +1,16 @@
 define(['jquery', 'underscore', 'postal', './grid', 'text!../../css/grid.css'], function requireParametersGrid($, _, ps, Grid, css) {
     $('head').append('<style>' + css + '</style>');
+    var fusion = ps.channel('fusion');
+
     var config = {
         showSearchInColumns: true,
         name: 'parametersGrid',
         method: 'GET',
         recordHeight: 40,
-        recid: 'ID',
+        recid: 'name',
         columns: [
             {
-                field: 'ID',
-                caption: 'ID',
-                sortable: true,
-                size: '25%',
-            },
-            {
-                field: 'Group',
+                field: 'attribute-group',
                 caption: 'Group',
                 sortable: true,
                 size: '25%',
@@ -22,7 +18,7 @@ define(['jquery', 'underscore', 'postal', './grid', 'text!../../css/grid.css'], 
                 editable: { type: 'text' }
             },
             {
-                field: 'Name',
+                field: 'name',
                 caption: 'Name',
                 sortable: true,
                 size: '25%',
@@ -30,27 +26,27 @@ define(['jquery', 'underscore', 'postal', './grid', 'text!../../css/grid.css'], 
                 editable: { type: 'text' }
             },
             {
-                field: 'Expression',
+                field: 'expression',
                 caption: 'Expression',
                 size: 250,
                 searchType: 'text',
                 editable: { type: 'text' }
             },
             {
-                field: 'Value',
+                field: 'value',
                 caption: 'Value',
                 sortable: true,
                 size: '25%'
             },
             {
-                field: 'Unit',
+                field: 'unit',
                 caption: 'Unit',
                 size: 25,
                 searchType: 'select'
             },
             {
-                field: 'Comments',
-                caption: 'Comments',
+                field: 'comment',
+                caption: 'Comment',
                 size: 100
             }
         ]
@@ -94,9 +90,46 @@ define(['jquery', 'underscore', 'postal', './grid', 'text!../../css/grid.css'], 
                 grid.w2ui.lock('Saving to Fusion 360...', true);
                 grid.w2ui.status('Saving to Fusion 360');
                 console.log('Grid Changed!');
-                event.done(function() {
-                    console.log('Grid change done');
+                event.done(function(e) {
+                    var record = grid.w2ui.records[e.index];
+                    var field = grid.w2ui.columns[e.column].field;
+                    var identifier = record.name;
+                    var oldValue = e.value_previous;
+                    var newValue = e.value_new;
+
+                    if (field === 'name') {
+                        identifier = oldValue;
+                    }
+
+                    fusion.request({
+                        topic: 'set',
+                        replyChannel: 'fusion.response',
+                        data: {
+                            item: 'parameters',
+                            arguments: [
+                                {
+                                    name: identifier,
+                                    field: field,
+                                    value: newValue
+                                }
+                            ]
+                        }
+                    }).then(
+                        function gridDataReceived(data) {
+                            grid.w2ui.unlock();
+                            if (data.status === 'success') {
+                                grid.w2ui.save();
+                            } else {
+                                record.w2ui.changes = {};
+                                grid.w2ui.refresh();
+                                grid.w2ui.error(
+                                    'There was an error while trying to save changes to Fusion 360. <br> Error message: ' + data.message
+                                );
+                            }
+                        }
+                    );
                 });
+                console.log('Grid change done');
             });
 
             grid.on('editField', function gridEditField(event) {

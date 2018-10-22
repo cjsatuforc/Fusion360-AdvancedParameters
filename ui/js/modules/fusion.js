@@ -124,10 +124,10 @@ define(['postal', 'jquery', 'underscore'], function requireData(ps, $, _) {
                     ps.publish({
                         channel: 'error',
                         topic: 'data.request',
-                        data: { msg: errorMessage, command: action, envelope: envelope }
+                        data: { message: errorMessage, command: action, envelope: envelope }
                     });
 
-                    d.resolve({ status: 'error', msg: errorMessage, command: action, envelope: envelope });
+                    d.resolve({ status: 'error', message: errorMessage, command: action, envelope: envelope });
                 }
             }, timeout);
         }

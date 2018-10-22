@@ -13,7 +13,6 @@ define(['jquery', 'underscore', 'postal'], function requireGrids($, _, ps) {
             var d = $.Deferred();
 
             fusion.subscribe({
-                channel: 'fusion',
                 topic: 'ready',
                 callback: function fusionReady() {
                     fusion.request({
@@ -65,10 +64,6 @@ define(['jquery', 'underscore', 'postal'], function requireGrids($, _, ps) {
 
             that.gridDataReady.then(function gridReady(data) {
                 if (data.status === 'success') {
-                    _.each(data.records, function (record) {
-                        record.recid = record.ID;
-                    });
-
                     that.w2ui.add(data.records);
                     d.resolve();
                 } else {
