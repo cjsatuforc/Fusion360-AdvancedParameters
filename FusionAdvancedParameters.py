@@ -123,6 +123,9 @@ class ShowApCommandExecuteHandler(adsk.core.CommandEventHandler):
             else:
                 _passApCommandThread.resume()
                 _advancedParametersPalette.isVisible = True
+                _advancedParametersPalette.sendInfoToHTML(
+                    '{ "command": "init", "channel": "fusion", "topic": "init.parameters" }',
+                    json.dumps({}))
 
         except:
             show_message('Failed to init Parameter Manager:\n{}', (traceback.format_exc()))
@@ -219,7 +222,7 @@ def initAdvancedParameters():
             time.sleep(0.1)
             adsk.doEvents()
 
-        # Tell the ui that Fusion is ready to accept commands
+        # Tell the ui that fusion is ready to init
         _advancedParametersPalette.sendInfoToHTML('{ "command": "init", "channel": "fusion", "topic": "init" }',
                                                   json.dumps({}))
 

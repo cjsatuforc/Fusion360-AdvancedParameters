@@ -5,39 +5,9 @@ define(['jquery', 'underscore', 'postal'], function requireGrids($, _, ps) {
         this.name = gridName;
         this.selector = gridSelector;
         this.config = config;
-        this.w2ui;
+        this.grid;
         var fusion = ps.channel('fusion');
-        this.gridDataReady = getGridData();
-
-        function getGridData() {
-            var d = $.Deferred();
-
-            fusion.subscribe({
-                topic: 'ready',
-                callback: function fusionReady() {
-                    fusion.request({
-                        topic: 'get',
-                        replyChannel: 'fusion.response',
-                        data: {
-                            item: 'parameters'
-                        }
-                    }).then(
-                        function gridDataReceived(data) {
-                            d.resolve(data);
-                        },
-                        function gridDataError(error) {
-                            d.resolve({ status: 'error', msg: error });
-                        });
-                }
-            });
-
-            fusion.publish({
-                channel: 'fusion',
-                topic: 'isReady'
-            });
-
-            return d.promise();
-        }
+        this.gridReady = $.Deferred();
 
         var addColumnSearchControls = function addFilterControls(columns) {
             var $newCaption;
@@ -52,7 +22,6 @@ define(['jquery', 'underscore', 'postal'], function requireGrids($, _, ps) {
         };
 
         this.createGrid = function createGrid() {
-            var d = $.Deferred();
             var $grid = $(that.selector);
 
             if (that.config.showSearchInColumns) {
@@ -60,18 +29,8 @@ define(['jquery', 'underscore', 'postal'], function requireGrids($, _, ps) {
             }
 
             $grid.w2grid(that.config);
-            that.w2ui = w2ui[that.config.name];
-
-            that.gridDataReady.then(function gridReady(data) {
-                if (data.status === 'success') {
-                    that.w2ui.add(data.records);
-                    d.resolve();
-                } else {
-                    $grid.html(data.msg + '<p>' + JSON.stringify(data.data) + '</p>');
-                }
-            });
-
-            return d.promise();
+            that.grid = w2ui[that.config.name];
+            that.gridReady.resolve();
         };
     }
 

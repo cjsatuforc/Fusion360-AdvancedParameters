@@ -55,7 +55,7 @@ define(['jquery', 'underscore', 'postal', './grid', 'text!../../css/grid.css'], 
     var deferreds = [];
 
     var init = function init() {
-        var grid = new Grid(config.name, '#parameters', config);
+        var g = new Grid(config.name, '#parameters', config);
         var layoutDef = $.Deferred();
         deferreds.push(layoutDef);
 
@@ -73,26 +73,61 @@ define(['jquery', 'underscore', 'postal', './grid', 'text!../../css/grid.css'], 
             channel: 'layout',
             topic: 'event.resize.layout1',
             callback: function layoutResized(msg, data) {
-                var $grid = $(grid.selector);
+                var $grid = $(g.selector);
                 var height = $grid.parent().height();
                 $grid.outerHeight(height);
             }
         });
 
+        fusion.subscribe({
+            topic: 'ready.parameters',
+            callback: function fusionReady(data, envelope) {
+                if (g.gridReady.state() === 'resolved') {
+                    g.grid.clear();
+                    g.grid.lock('Loading parameters...', true);
+                }
+
+                fusion.request({
+                    topic: 'get',
+                    replyChannel: 'fusion.response',
+                    data: {
+                        item: 'parameters'
+                    }
+                }).then(
+                    function gridDataReceived(data) {
+                        // d.resolve(data);
+                        g.gridReady.then(function gridReadyForData() {
+                            g.grid.clear();
+                            g.grid.add(data.records);
+                            g.grid.unlock();
+                        });
+                    },
+                    function gridDataError(error) {
+                        // d.resolve({ status: 'error', msg: error });
+                        g.grid.error(
+                            'There was an error while trying to get grid data from Fusion 360. <br> Error message: ' + error
+                        );
+                    });
+            }
+        });
+
+        fusion.publish({
+            channel: 'fusion',
+            topic: 'isReady.parameters'
+        });
+
         $.when.apply($, deferreds).then(function() {
-            grid.createGrid().then(function() {
-                grid.w2ui.unlock();
-            });
+            g.createGrid();
 
-            grid.w2ui.lock('Loading parameters...', true);
+            g.grid.lock('Loading parameters...', true);
 
-            grid.on('change', function gridChange(event) {
-                grid.w2ui.lock('Saving to Fusion 360...', true);
-                grid.w2ui.status('Saving to Fusion 360');
+            g.grid.on('change', function gridChange(event) {
+                g.grid.lock('Saving to Fusion 360...', true);
+                g.grid.status('Saving to Fusion 360');
                 console.log('Grid Changed!');
                 event.done(function(e) {
-                    var record = grid.w2ui.records[e.index];
-                    var field = grid.w2ui.columns[e.column].field;
+                    var record = g.grid.records[e.index];
+                    var field = g.grid.columns[e.column].field;
                     var identifier = record.name;
                     var oldValue = e.value_previous;
                     var newValue = e.value_new;
@@ -116,13 +151,13 @@ define(['jquery', 'underscore', 'postal', './grid', 'text!../../css/grid.css'], 
                         }
                     }).then(
                         function gridDataReceived(data) {
-                            grid.w2ui.unlock();
+                            g.grid.unlock();
                             if (data.status === 'success') {
-                                grid.w2ui.save();
+                                g.grid.save();
                             } else {
                                 record.w2ui.changes = {};
-                                grid.w2ui.refresh();
-                                grid.w2ui.error(
+                                g.grid.refresh();
+                                g.grid.error(
                                     'There was an error while trying to save changes to Fusion 360. <br> Error message: ' + data.message
                                 );
                             }
@@ -132,13 +167,13 @@ define(['jquery', 'underscore', 'postal', './grid', 'text!../../css/grid.css'], 
                 console.log('Grid change done');
             });
 
-            grid.on('editField', function gridEditField(event) {
+            g.grid.on('editField', function gridEditField(event) {
                 if (event.originalEvent.keyCode === 13) {
                     event.preventDefault();
                 }
             });
 
-            grid.on('dblClick', function(event) {
+            g.grid.on('dblClick', function(event) {
                 console.log('dblClick');
             });
         });

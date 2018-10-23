@@ -1,6 +1,6 @@
 define(['postal', 'jquery', 'underscore'], function requireData(ps, $, _) {
     var rip = {};
-    var fusionReady = false;
+    var fusionReady = $.Deferred();
     var defaultTimeout = 5000;
     var adsk = adsk || undefined;
 
@@ -26,10 +26,15 @@ define(['postal', 'jquery', 'underscore'], function requireData(ps, $, _) {
                             }
                         });
                 } else if (command.indexOf('init') === 0 ) {
-                    fusionReady = true;
-                    fusionIsReady();
+                    var reqTopic = envelope.topic.split('.')[1];
+                    fusionReady.resolve();
+
+                    if (reqTopic) {
+                        fusionIsReady(reqTopic);
+                    }
+
                 } else if (command.indexOf('isReady') === 0 ) {
-                    fusionIsReady();
+                    fusionIsReady(envelope.topic.split('.')[1]);
                 }
             }
         });
@@ -42,7 +47,6 @@ define(['postal', 'jquery', 'underscore'], function requireData(ps, $, _) {
                 var responseId = action.responseId;
                 var rip = getRip(responseId);
 
-                // alert('command sent from fusion!!!');
                 $('#messages').prepend('<p>Recieved: action = ' + requestAction + ' | data = ' + data + '</p>');
                 if (rip) {
                     rip.resolve(response);
@@ -58,44 +62,23 @@ define(['postal', 'jquery', 'underscore'], function requireData(ps, $, _) {
                 return 'OK';
             }
         };
-
-        /*
-            if (!adsk) {
-                adsk = {
-                    fusionSendData: function fusionSendData(command) {
-                        if (command.command === 'get') {
-                            setTimeout(function() {
-                                $.ajax({
-                                    type: 'GET',
-                                    dataType: 'html',
-                                    url: 'data.parameters.json',
-                                    success: function (response) {
-                                        window.fusionJavaScriptHandler.handle(command, response);
-                                    }
-                                });
-
-                            }, 3000);
-                        } else {
-                            setTimeout(function() {
-                                var response = JSON.stringify({ status: 'success' });
-                                window.fusionJavaScriptHandler.handle(command, response);
-                            });
-                        }
-                    }
-                };
-            }
-        */
     };
 
-    var fusionIsReady = function fusionIsReady() {
-        if (fusionReady === true) {
+    var fusionIsReady = function fusionIsReady(reqTopic) {
+        if (fusionReady.state() === 'pending') {
+            if (window.adsk && window.fusionJavaScriptHandler.handle) {
+                fusionReady.resolve();
+            }
+        }
+
+        fusionReady.then(function fusionReady() {
+            var topic = reqTopic ? 'ready.' + reqTopic : 'ready';
             sendFusionResponse('',
                 {
                     channel: 'fusion',
-                    topic: 'ready'
+                    topic: topic
                 });
-
-        }
+        });
     };
 
     var sendToFusion = function sendToFusion(action, envelope) {
@@ -113,8 +96,9 @@ define(['postal', 'jquery', 'underscore'], function requireData(ps, $, _) {
         }
 
         adsk.fusionSendData(JSON.stringify(action), JSON.stringify(envelope));
-
-        $('#messages').prepend('<p>Sent: command = ' + JSON.stringify(action) + '</p>');
+        $(function() {
+            $('#messages').prepend('<p>Sent: command = ' + JSON.stringify(action) + '</p>');
+        });
 
         if (timeout) {
             setTimeout(function getDataTimeout() {
